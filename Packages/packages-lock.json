@@ -7,6 +7,17 @@
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
+    "com.ivanmurzak.unity.mcp": {
+      "version": "0.82.2",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.test-framework": "1.1.33",
+        "com.unity.modules.uielements": "1.0.0",
+        "extensions.unity.playerprefsex": "2.1.5"
+      },
+      "url": "https://package.openupm.com"
+    },
     "com.unity.ai.inference": {
       "version": "2.6.1",
       "depth": 0,
@@ -161,6 +172,13 @@
         "com.unity.modules.ui": "1.0.0",
         "com.unity.modules.imgui": "1.0.0"
       }
+    },
+    "extensions.unity.playerprefsex": {
+      "version": "2.1.5",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://package.openupm.com"
     },
     "com.unity.modules.adaptiveperformance": {
       "version": "1.0.0",
