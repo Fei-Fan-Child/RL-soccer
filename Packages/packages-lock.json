@@ -7,16 +7,21 @@
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
-    "com.ivanmurzak.unity.mcp": {
-      "version": "0.82.2",
+    "com.coplaydev.unity-mcp": {
+      "version": "file:D:/MyUnity/unity-mcp-beta/MCPForUnity",
       "depth": 0,
-      "source": "registry",
+      "source": "local",
       "dependencies": {
-        "com.unity.test-framework": "1.1.33",
+        "com.unity.modules.animation": "1.0.0",
+        "com.unity.modules.imageconversion": "1.0.0",
+        "com.unity.modules.physics": "1.0.0",
+        "com.unity.modules.physics2d": "1.0.0",
         "com.unity.modules.uielements": "1.0.0",
-        "extensions.unity.playerprefsex": "2.1.5"
-      },
-      "url": "https://package.openupm.com"
+        "com.unity.modules.screencapture": "1.0.0",
+        "com.unity.modules.unitywebrequest": "1.0.0",
+        "com.unity.nuget.newtonsoft-json": "3.0.2",
+        "com.unity.test-framework": "1.1.31"
+      }
     },
     "com.unity.ai.inference": {
       "version": "2.6.1",
@@ -28,6 +33,15 @@
         "com.unity.collections": "2.4.3",
         "com.unity.nuget.newtonsoft-json": "3.2.1",
         "com.unity.modules.imageconversion": "1.0.0"
+      },
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.bindings.openimageio": {
+      "version": "1.0.2",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.collections": "1.2.4"
       },
       "url": "https://packages.unity.com"
     },
@@ -112,7 +126,7 @@
       "depth": 0,
       "source": "local",
       "dependencies": {
-        "com.unity.ai.inference": "2.2.1",
+        "com.unity.ai.inference": "2.6.1",
         "com.unity.modules.imageconversion": "1.0.0",
         "com.unity.modules.jsonserialize": "1.0.0",
         "com.unity.modules.physics": "1.0.0"
@@ -130,6 +144,17 @@
       "depth": 0,
       "source": "registry",
       "dependencies": {},
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.recorder": {
+      "version": "5.1.6",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.timeline": "1.8.7",
+        "com.unity.collections": "1.2.4",
+        "com.unity.bindings.openimageio": "1.0.2"
+      },
       "url": "https://packages.unity.com"
     },
     "com.unity.test-framework": {
@@ -173,13 +198,6 @@
         "com.unity.modules.imgui": "1.0.0"
       }
     },
-    "extensions.unity.playerprefsex": {
-      "version": "2.1.5",
-      "depth": 1,
-      "source": "registry",
-      "dependencies": {},
-      "url": "https://package.openupm.com"
-    },
     "com.unity.modules.adaptiveperformance": {
       "version": "1.0.0",
       "depth": 0,
@@ -196,7 +214,7 @@
     },
     "com.unity.modules.animation": {
       "version": "1.0.0",
-      "depth": 2,
+      "depth": 1,
       "source": "builtin",
       "dependencies": {}
     },
@@ -259,7 +277,7 @@
     },
     "com.unity.modules.screencapture": {
       "version": "1.0.0",
-      "depth": 2,
+      "depth": 1,
       "source": "builtin",
       "dependencies": {
         "com.unity.modules.imageconversion": "1.0.0"

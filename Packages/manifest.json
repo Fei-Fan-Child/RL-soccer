@@ -1,12 +1,13 @@
 {
   "dependencies": {
-    "com.ivanmurzak.unity.mcp": "0.82.2",
+    "com.coplaydev.unity-mcp": "file:D:/MyUnity/unity-mcp-beta/MCPForUnity",
     "com.unity.ai.inference": "2.6.1",
     "com.unity.formats.fbx": "5.1.6",
     "com.unity.ide.rider": "3.0.40",
     "com.unity.inputsystem": "1.19.0",
     "com.unity.ml-agents": "file:../../ml-agents/com.unity.ml-agents",
     "com.unity.nuget.newtonsoft-json": "3.2.2",
+    "com.unity.recorder": "5.1.6",
     "com.unity.test-framework": "1.6.0",
     "com.unity.ugui": "2.0.0",
     "com.unity.modules.adaptiveperformance": "1.0.0",
