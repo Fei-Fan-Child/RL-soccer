@@ -34,3 +34,7 @@ models/
 
 # Project context (not synced)
 CONTEXT.md
+
+# opencode (AI client) local config
+.opencode/
+opencode.json
