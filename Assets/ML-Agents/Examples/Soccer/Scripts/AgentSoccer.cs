@@ -2,6 +2,9 @@ using UnityEngine;
 using Unity.MLAgents;
 using Unity.MLAgents.Actuators;
 using Unity.MLAgents.Policies;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 
 public enum Team
 {
@@ -32,6 +35,22 @@ public class AgentSoccer : Agent
     // The coefficient for the reward for colliding with a ball. Set using curriculum.
     float m_BallTouch;
     public Position position;
+
+    public enum HumanSlot
+    {
+        None = 0,
+        P1 = 1,
+        P2 = 2
+    }
+
+    [Header("Human Control")]
+    [Tooltip("If true, this agent is driven by keyboard input via Heuristic() instead of the neural network. " +
+             "Set BehaviorType to HeuristicOnly on this agent's BehaviorParameters.")]
+    public bool isHumanControlled = false;
+
+    [Tooltip("Which human player's keyboard scheme to read. Only used when isHumanControlled is true. " +
+             "P1 = WASD + QE (rotate). P2 = Arrow keys + NumpadEnter (rotate).")]
+    public HumanSlot playerSlot = HumanSlot.None;
 
     const float k_Power = 2000f;
     float m_Existential;
@@ -162,33 +181,52 @@ public class AgentSoccer : Agent
     public override void Heuristic(in ActionBuffers actionsOut)
     {
         var discreteActionsOut = actionsOut.DiscreteActions;
-        //forward
-        if (Input.GetKey(KeyCode.W))
+        // Default all branches to 0 (no-op) every frame.
+        discreteActionsOut[0] = 0;
+        discreteActionsOut[1] = 0;
+        discreteActionsOut[2] = 0;
+
+        if (!isHumanControlled)
+            return;
+
+#if ENABLE_INPUT_SYSTEM
+        var kb = Keyboard.current;
+        if (kb == null)
+            return;
+
+        switch (playerSlot)
         {
-            discreteActionsOut[0] = 1;
+            case HumanSlot.P1:
+                // P1: WASD for forward/right/rotate, QE for lateral.
+                // Note: matches the legacy mapping in this file (W=forward, S=back, A=rotate CCW, D=rotate CW,
+                // E=right, Q=left) so muscle memory carries over.
+                if (kb.wKey.isPressed) discreteActionsOut[0] = 1; // forward
+                if (kb.sKey.isPressed) discreteActionsOut[0] = 2; // back
+                if (kb.aKey.isPressed) discreteActionsOut[2] = 1; // rotate CCW
+                if (kb.dKey.isPressed) discreteActionsOut[2] = 2; // rotate CW
+                if (kb.eKey.isPressed) discreteActionsOut[1] = 1; // strafe right
+                if (kb.qKey.isPressed) discreteActionsOut[1] = 2; // strafe left
+                break;
+
+            case HumanSlot.P2:
+                // P2: Arrow keys for forward/back/right/left, NumpadEnter for rotate (single key -> CW).
+                if (kb.upArrowKey.isPressed)    discreteActionsOut[0] = 1; // forward
+                if (kb.downArrowKey.isPressed)  discreteActionsOut[0] = 2; // back
+                if (kb.rightArrowKey.isPressed) discreteActionsOut[1] = 1; // strafe right
+                if (kb.leftArrowKey.isPressed)  discreteActionsOut[1] = 2; // strafe left
+                if (kb.numpad3Key.isPressed)     discreteActionsOut[2] = 1; // rotate CCW (added so P2 also has bi-directional rotate)
+                if (kb.numpadEnterKey.isPressed) discreteActionsOut[2] = 2; // rotate CW
+                break;
         }
-        if (Input.GetKey(KeyCode.S))
-        {
-            discreteActionsOut[0] = 2;
-        }
-        //rotate
-        if (Input.GetKey(KeyCode.A))
-        {
-            discreteActionsOut[2] = 1;
-        }
-        if (Input.GetKey(KeyCode.D))
-        {
-            discreteActionsOut[2] = 2;
-        }
-        //right
-        if (Input.GetKey(KeyCode.E))
-        {
-            discreteActionsOut[1] = 1;
-        }
-        if (Input.GetKey(KeyCode.Q))
-        {
-            discreteActionsOut[1] = 2;
-        }
+#else
+        // Fallback when the new Input System package isn't available.
+        if (Input.GetKey(KeyCode.W)) discreteActionsOut[0] = 1;
+        if (Input.GetKey(KeyCode.S)) discreteActionsOut[0] = 2;
+        if (Input.GetKey(KeyCode.A)) discreteActionsOut[2] = 1;
+        if (Input.GetKey(KeyCode.D)) discreteActionsOut[2] = 2;
+        if (Input.GetKey(KeyCode.E)) discreteActionsOut[1] = 1;
+        if (Input.GetKey(KeyCode.Q)) discreteActionsOut[1] = 2;
+#endif
     }
     /// <summary>
     /// Used to provide a "kick" to the ball.

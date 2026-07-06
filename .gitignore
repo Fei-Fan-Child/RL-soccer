@@ -38,3 +38,6 @@ CONTEXT.md
 # opencode (AI client) local config
 .opencode/
 opencode.json
+
+# ML-Agents per-session performance debug output (auto-written by Editor Play)
+Assets/ML-Agents/Timers/
