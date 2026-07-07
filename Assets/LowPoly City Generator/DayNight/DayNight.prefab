@@ -1,0 +1,86 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &2309671740925911801
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2211907383500271752}
+  - component: {fileID: 74343649395529621}
+  m_Layer: 0
+  m_Name: DayNight
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2211907383500271752
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2309671740925911801}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &74343649395529621
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2309671740925911801}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f92ff8791654ed0439d95d050b22b66b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  player: {fileID: 0}
+  directionalLight: {fileID: 0}
+  materialDay:
+  - {fileID: 2100000, guid: e0b356cf339e4eb4d9863dbbe462979f, type: 2}
+  - {fileID: 2100000, guid: 2c93fac459b8bd04ead2e2bdbe3a0d36, type: 2}
+  - {fileID: 2100000, guid: 95d02bde13ff241498ff08e155db6cfc, type: 2}
+  - {fileID: 2100000, guid: aefdc81c95f42a64abb37e22c47fb62f, type: 2}
+  - {fileID: 2100000, guid: 700b10f17bd22a4428a5371a3a71b363, type: 2}
+  - {fileID: 2100000, guid: 5caa52c987b127441b85d0a838c2dbf1, type: 2}
+  materialNight:
+  - {fileID: 2100000, guid: 6c1c838c459398d49bf4996b9699865b, type: 2}
+  - {fileID: 2100000, guid: f8022a9668cb7064aa065fe79196d7a8, type: 2}
+  - {fileID: 2100000, guid: ee44d84914c87ca4685a4c9d4ea0c092, type: 2}
+  - {fileID: 2100000, guid: 121b98efae647b84f98380c15d006bb9, type: 2}
+  - {fileID: 2100000, guid: d762a81bb69332f4fbbc9deb1ee0cc4f, type: 2}
+  - {fileID: 2100000, guid: 7e543179456b54f48b642e191a433ba7, type: 2}
+  skyBoxDay: {fileID: 2100000, guid: e265fe8490de95a4badde807c6d812f5, type: 2}
+  skyBoxNight: {fileID: 2100000, guid: dc0bb7eaa4399d149ba68cdd27e1b000, type: 2}
+  isNight: 0
+  isMoonLight: 0
+  isSpotLights: 1
+  night: 0
+  moonLight: 0
+  spotLights: 1
+  intenseMoonLight: 31.818182
+  _intenseMoonLight: 31.818182
+  intenseSunLight: 103.684204
+  _intenseSunLight: 103.684204
+  skyColorDay: {r: 0.6792453, g: 0.66536134, b: 0.63759345, a: 1}
+  equatorColorDay: {r: 0.8207547, g: 0.8207547, b: 0.8207547, a: 1}
+  _skyColorDay: {r: 0.6792453, g: 0.66536134, b: 0.63759345, a: 1}
+  _equatorColorDay: {r: 0.8207547, g: 0.8207547, b: 0.8207547, a: 1}
+  skyColorNight: {r: 0.46462265, g: 0.477095, b: 0.5, a: 1}
+  equatorColorNight: {r: 0.254717, g: 0.254717, b: 0.254717, a: 1}
+  _skyColorNight: {r: 0.46462265, g: 0.477095, b: 0.5, a: 1}
+  _equatorColorNight: {r: 0.254717, g: 0.254717, b: 0.254717, a: 1}
+  sunLightColor: {r: 0.9245283, g: 0.81066537, b: 0.7384597, a: 1}
+  _sunLightColor: {r: 0, g: 0, b: 0, a: 0}
+  moonLightColor: {r: 0.6529459, g: 0.6529459, b: 0.6886792, a: 1}
+  _moonLightColor: {r: 0, g: 0, b: 0, a: 0}
