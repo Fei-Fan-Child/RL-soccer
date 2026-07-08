@@ -128,21 +128,21 @@ public class AgentSoccer : Agent
         switch (forwardAxis)
         {
             case 1:
-                dirToGo = transform.forward * m_ForwardSpeed;
+                dirToGo += transform.forward * m_ForwardSpeed;
                 m_KickPower = 1f;
                 break;
             case 2:
-                dirToGo = transform.forward * -m_ForwardSpeed;
+                dirToGo += transform.forward * -m_ForwardSpeed;
                 break;
         }
 
         switch (rightAxis)
         {
             case 1:
-                dirToGo = transform.right * m_LateralSpeed;
+                dirToGo += transform.right * m_LateralSpeed;
                 break;
             case 2:
-                dirToGo = transform.right * -m_LateralSpeed;
+                dirToGo += transform.right * -m_LateralSpeed;
                 break;
         }
 
@@ -197,35 +197,28 @@ public class AgentSoccer : Agent
         switch (playerSlot)
         {
             case HumanSlot.P1:
-                // P1: WASD for forward/right/rotate, QE for lateral.
-                // Note: matches the legacy mapping in this file (W=forward, S=back, A=rotate CCW, D=rotate CW,
-                // E=right, Q=left) so muscle memory carries over.
+                // P1: W=forward, S=back, A=rotate left, D=rotate right.
                 if (kb.wKey.isPressed) discreteActionsOut[0] = 1; // forward
                 if (kb.sKey.isPressed) discreteActionsOut[0] = 2; // back
                 if (kb.aKey.isPressed) discreteActionsOut[2] = 1; // rotate CCW
                 if (kb.dKey.isPressed) discreteActionsOut[2] = 2; // rotate CW
-                if (kb.eKey.isPressed) discreteActionsOut[1] = 1; // strafe right
-                if (kb.qKey.isPressed) discreteActionsOut[1] = 2; // strafe left
                 break;
 
             case HumanSlot.P2:
-                // P2: Arrow keys for forward/back/right/left, NumpadEnter for rotate (single key -> CW).
+                // P2: ↑=forward, ↓=back, ←=rotate left, →=rotate right.
                 if (kb.upArrowKey.isPressed)    discreteActionsOut[0] = 1; // forward
                 if (kb.downArrowKey.isPressed)  discreteActionsOut[0] = 2; // back
-                if (kb.rightArrowKey.isPressed) discreteActionsOut[1] = 1; // strafe right
-                if (kb.leftArrowKey.isPressed)  discreteActionsOut[1] = 2; // strafe left
-                if (kb.numpad3Key.isPressed)     discreteActionsOut[2] = 1; // rotate CCW (added so P2 also has bi-directional rotate)
-                if (kb.numpadEnterKey.isPressed) discreteActionsOut[2] = 2; // rotate CW
+                if (kb.leftArrowKey.isPressed)  discreteActionsOut[2] = 1; // rotate CCW
+                if (kb.rightArrowKey.isPressed) discreteActionsOut[2] = 2; // rotate CW
                 break;
         }
 #else
         // Fallback when the new Input System package isn't available.
+        // W=forward, S=back, A=rotate left, D=rotate right.
         if (Input.GetKey(KeyCode.W)) discreteActionsOut[0] = 1;
         if (Input.GetKey(KeyCode.S)) discreteActionsOut[0] = 2;
         if (Input.GetKey(KeyCode.A)) discreteActionsOut[2] = 1;
         if (Input.GetKey(KeyCode.D)) discreteActionsOut[2] = 2;
-        if (Input.GetKey(KeyCode.E)) discreteActionsOut[1] = 1;
-        if (Input.GetKey(KeyCode.Q)) discreteActionsOut[1] = 2;
 #endif
     }
     /// <summary>

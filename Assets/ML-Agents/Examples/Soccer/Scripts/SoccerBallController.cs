@@ -23,5 +23,9 @@ public class SoccerBallController : MonoBehaviour
         {
             envController.GoalTouched(Team.Purple);
         }
+        if (col.gameObject.CompareTag("wall")) //ball hit boundary wall
+        {
+            envController.ResetScene();
+        }
     }
 }
