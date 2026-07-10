@@ -45,6 +45,10 @@ public class SoccerEnvController : MonoBehaviour
     private SimpleMultiAgentGroup m_PurpleAgentGroup;
 
     private int m_ResetTimer;
+    private int m_BlueScore;
+    private int m_PurpleScore;
+    private TMPro.TextMeshPro m_ScoreTextWest;
+    private TMPro.TextMeshPro m_ScoreTextEast;
 
     void Start()
     {
@@ -53,6 +57,13 @@ public class SoccerEnvController : MonoBehaviour
         // Initialize TeamManager
         m_BlueAgentGroup = new SimpleMultiAgentGroup();
         m_PurpleAgentGroup = new SimpleMultiAgentGroup();
+
+        // Find scoreboard TextMeshPro objects
+        var sbWest = GameObject.Find("Score_West");
+        if (sbWest != null) m_ScoreTextWest = sbWest.GetComponent<TMPro.TextMeshPro>();
+        var sbEast = GameObject.Find("Score_East");
+        if (sbEast != null) m_ScoreTextEast = sbEast.GetComponent<TMPro.TextMeshPro>();
+        UpdateScoreDisplay();
         ballRb = ball.GetComponent<Rigidbody>();
         m_BallStartingPos = new Vector3(ball.transform.position.x, ball.transform.position.y, ball.transform.position.z);
         foreach (var item in AgentsList)
@@ -99,18 +110,30 @@ public class SoccerEnvController : MonoBehaviour
     {
         if (scoredTeam == Team.Blue)
         {
+            m_BlueScore++;
             m_BlueAgentGroup.AddGroupReward(1 - (float)m_ResetTimer / MaxEnvironmentSteps);
             m_PurpleAgentGroup.AddGroupReward(-1);
         }
         else
         {
+            m_PurpleScore++;
             m_PurpleAgentGroup.AddGroupReward(1 - (float)m_ResetTimer / MaxEnvironmentSteps);
             m_BlueAgentGroup.AddGroupReward(-1);
         }
+        UpdateScoreDisplay();
         m_PurpleAgentGroup.EndGroupEpisode();
         m_BlueAgentGroup.EndGroupEpisode();
         ResetScene();
 
+    }
+
+    void UpdateScoreDisplay()
+    {
+        string scoreText = "Blue: " + m_BlueScore + "  Vs  Purple: " + m_PurpleScore;
+        if (m_ScoreTextWest != null)
+            m_ScoreTextWest.text = scoreText;
+        if (m_ScoreTextEast != null)
+            m_ScoreTextEast.text = scoreText;
     }
 
 
