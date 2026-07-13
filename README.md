@@ -2,7 +2,7 @@
 
 > 石河子大学信息科学与技术学院 · 人工智能综合实训  
 > Unity ML-Agents + POCA + TF Serving + Redis  
-> **v2.2** — Python 3.14 兼容 | NullReferenceException 修复 | 环境配置文档更新
+> **v2.3** — 6 项训练 Bug 修复 | Python 3.10 推荐 | 环境配置指南独立为 [Environment.md](Environment.md)
 
 ---
 
@@ -18,6 +18,7 @@
 - [8. TF Serving 部署](#8-tf-serving-部署)
 - [9. Redis 日志与可视化](#9-redis-日志与可视化)
 - [10. 人类 vs AI 模式](#10-人类-vs-ai-模式)
+- [附录](#附录)
 
 ---
 
@@ -45,93 +46,44 @@
 
 ## 2. 环境配置
 
-### 2.1 依赖关系
+> **完整的环境搭建与训练步骤已独立为 [Environment.md](Environment.md)**，包含：
+> - Python 3.10 安装
+> - ML-Agents 依赖安装 (8 步命令)
+> - ML-Agents 兼容性补丁
+> - 训练启动与监控
+> - 常见问题排查
+
+### 2.1 目录结构
 
 ```text
-D:\MyUnity\RL-soccer         ← 本项目 (Unity)
-D:\MyUnity\ml-agents          ← ML-Agents 源码 (Unity 本地包引用)
+D:\MyUnity\
+├── RL-soccer         ← 本项目 (git clone)
+└── ml-agents          ← ML-Agents 源码 (手动复制)
+    ├── ml-agents/       训练器
+    └── ml-agents-envs/  通信库
 ```
 
-### 2.2 Unity 环境
+### 2.2 依赖一览
 
-| 组件 | 版本/路径 |
-|------|----------|
-| Unity Editor | 6000.3.18f1 |
-| ML-Agents 包 | `file:../../ml-agents/com.unity.ml-agents` |
-| Input System | 1.19.0 |
-| Barracuda (ONNX) | 2.6.1 |
-| Unity MCP | 0.82.4 |
+| 组件 | 版本 | 说明 |
+|------|------|------|
+| Unity Editor | 6000.3.18f1 | 3D 物理足球环境 |
+| Python | **3.10** (推荐) | ML-Agents 原生支持 |
+| ML-Agents 包 | `file:../../ml-agents/com.unity.ml-agents` | Unity 本地包引用 |
+| ML-Agents Python | 1.2.0.dev0 (本地安装) | POCA + Self-Play |
+| Input System | 1.19.0 | 人类操控 |
+| protobuf | 3.20.3 | **必须降级到此版本** |
+| numpy | 1.23.x | **不可用 2.x** |
+| onnxscript | 最新 | 模型导出需要 |
+| TensorBoard | 2.13.x | 训练监控 |
 
-### 2.3 Python 环境 (首次安装)
-
-> **⚠️ Python 3.14+ 用户注意**: 本地 `ml-agents` 仓库限制 `python_requires="<=3.10.12"`。  
-> 安装前需要先修改 `D:\MyUnity\ml-agents\ml-agents-envs\setup.py` 和  
-> `D:\MyUnity\ml-agents\ml-agents\setup.py` 中的版本约束（详见下方步骤）。
-
-```powershell
-cd D:\MyUnity\RL-soccer\python
-
-# ============================================================
-# 步骤 1: 安装 ml-agents-envs (Unity 通信库)
-# ============================================================
-# 首次安装前，修改 D:\MyUnity\ml-agents\ml-agents-envs\setup.py:
-#   python_requires=">=3.10.1"          (原: ">=3.10.1,<=3.10.12")
-#   "numpy>=1.23.5"                     (原: "numpy>=1.23.5,<1.24.0")
-#   "protobuf>=3.6"                     (原: "protobuf>=3.6,<3.21")
-#   "grpcio>=1.11.0"                    (原: "grpcio>=1.11.0,<=1.53.2")
-#   "pettingzoo>=1.15.0"                (原: "pettingzoo==1.15.0")
-
-pip install -e D:\MyUnity\ml-agents\ml-agents-envs
-
-# ============================================================
-# 步骤 2: 安装 ml-agents (训练器)
-# ============================================================
-# 首次安装前，修改 D:\MyUnity\ml-agents\ml-agents\setup.py:
-#   python_requires=">=3.10.1"          (原: ">=3.10.1,<=3.10.12")
-#   "numpy>=1.23.5"                     (原: "numpy>=1.23.5,<1.24.0")
-#   "protobuf>=3.6"                     (原: "protobuf>=3.6,<3.21")
-#   "grpcio>=1.11.0"                    (原: "grpcio>=1.11.0,<=1.53.2")
-#   "torch>=2.1.1"                      (原: "torch>=2.1.1,<=2.8.0")
-#   "onnx>=1.15.0"                      (原: "onnx==1.15.0")
-
-pip install -e D:\MyUnity\ml-agents\ml-agents
-
-# ============================================================
-# 步骤 3: 版本对齐 (关键！解决 protobuf/tensorboard 冲突)
-# ============================================================
-# ml-agents 的 pb2 文件只兼容 protobuf 3.x，但新版 tensorboard 需要 6.x+
-# 解决: 降级 protobuf + tensorboard，移除 onnx（训练不需要）
-
-pip uninstall onnx -y
-pip install "protobuf==3.20.3" "tensorboard>=2.13,<2.14"
-
-# ============================================================
-# 步骤 4: 安装 rlsoccer 包 (RedisStatsWriter 插件 + 依赖)
-# ============================================================
-pip install -e .
-
-# ============================================================
-# 步骤 5: 重复版本对齐 (rlsoccer 依赖会覆盖 protobuf/tensorboard)
-# ============================================================
-pip uninstall onnx -y
-pip install "protobuf==3.20.3" "tensorboard>=2.13,<2.14"
-
-# ============================================================
-# 验证
-# ============================================================
-python -c "from mlagents.trainers.learn import run_training; from rlsoccer.side_channel import get_soccer_step_channel; print('OK')"
-```
-
-> **为什么这么复杂？** Python 3.14 是 2026 年最新版本，ML-Agents 仓库的  
-> protobuf/torch/numpy 版本约束跟不上。上述步骤已在实际环境中验证通过。
-
-### 2.4 Docker 服务
+### 2.3 Docker (可选)
 
 ```powershell
-# 仅 Redis
+# Redis (步级日志 + 指标缓存)
 docker compose -f redis/docker-compose.yml up -d
 
-# TF Serving + Redis 全套
+# TF Serving (模型远程推理)
 docker compose -f tf_serving/docker-compose.yml up -d
 ```
 
@@ -411,179 +363,63 @@ Agent 通过 **双重感知** 获取环境信息：
 
 ## 7. 训练指南
 
+> **完整步骤见 [Environment.md](Environment.md)**，下方为快速参考。
+
 ### 7.1 快速开始
 
 ```powershell
-# 前置: 完成 [2.3 Python 环境配置](#23-python-环境-首次安装)
-
-# 1. 启动训练 (先运行这个！)
+# 步骤 1: 启动训练 (先运行这个)
 cd D:\MyUnity\RL-soccer\python
-python train.py --run-id soccer-v1
+py -3.10 train.py --run-id soccer-v1 --force --timeout-wait 300
 
-# 2. 看到 "Listening on port 5005" 后，在 Unity Editor 中点击 ▶ Play
-#    确保场景中 SoccerSideChannelRegistrar 已挂载到任意 GameObject
+# 步骤 2: Unity Editor 中打开 SoccerTwos 场景，点击 ▶ Play
+#   - 确保挂载 SoccerSideChannelRegistrar
+#   - 确保 BehaviorParameters → VectorObservationSize = 10
+#   - 确保 BehaviorParameters → BehaviorType = Default
 
-# 3. 监控训练
+# 步骤 3: 监控
 tensorboard --logdir results --port 6006
+# 浏览器打开 http://localhost:6006
 ```
 
-> **⚠️ 重要**: 必须先启动 `python train.py`，再点 Unity ▶ Play。  
-> 顺序反了会报 "Couldn't connect to trainer" 警告（Agent 退化为推理模式）。
+> **⚠️ 必须先 train.py 再 Unity Play，顺序反了会连接失败。**
 
-> **⚠️ VectorObservationSize**: 如果 AI Agent 需要向量观察（球速、位置等 10 维），  
-> 在 Unity Inspector 中将 Agent 的 `BehaviorParameters` → `VectorObservationSize` 设为 `10`。  
-> 设为 `0`（默认）也不会报错——`CollectObservations` 已内置 null guard 安全跳过。
-
-### 7.2 启动时发生了什么
-
-```
-python train.py --run-id soccer-v1
-  │
-  ├─ 1. 注册 SoccerStepChannel (等待 Unity 连接)
-  │      └→ 步级数据将写入 Redis: soccer:ep:*:step:*
-  │
-  ├─ 2. 加载训练优化补丁
-  │      ├→ 梯度裁剪 (max_norm=0.5)
-  │      └→ 奖励归一化 (running mean/std)
-  │
-  ├─ 3. 注入 SideChannel 到环境工厂
-  │      └→ Python 单进程直连, 非 subprocess
-  │
-  ├─ 4. 启动 run_training()
-  │      └→ 自动加载 RedisStatsWriter (entry_points 插件)
-  │      └→ 指标数据将写入 Redis: soccer:metrics:*
-  │
-  └─ 5. 等待 Unity 连接...
-         └→ Unity ▶ Play → gRPC 握手 → 训练开始
-```
-
-### 7.3 环境变量配置
-
-| 变量 | 默认值 | 说明 |
-|------|-------|------|
-| `REDIS_HOST` | `localhost` | Redis 主机地址 |
-| `REDIS_PORT` | `6379` | Redis 端口 |
-
-```powershell
-# 指定 Redis 地址
-$env:REDIS_HOST="192.168.1.100"
-python train.py --run-id soccer-v1
-```
-
-### 7.4 命令参数
+### 7.2 命令参数
 
 | 参数 | 默认值 | 说明 |
 |------|-------|------|
-| `--run-id` | 必填 | 训练运行 ID |
-| `--config` | `poca_soccer_optimized.yaml` | YAML 配置文件 (可选 optimized 版) |
-| `--num-envs` | 1 | 并行 Unity 环境数量 |
-| `--resume` | false | 从检查点恢复训练 |
-| `--inference` | false | 仅推理模式 (不更新权重) |
-| `--force` | false | 覆盖已有 run-id |
-| `--no-graphics` | false | 无图形模式 (服务器训练) |
-| `--base-port` | 5005 | Unity 通信端口 |
-| `--env-args` | — | 传递给 Unity 的额外参数 |
+| `--run-id` | 必填 | 训练名称 |
+| `--config` | `poca_soccer.yaml` | 配置文件 |
+| `--resume` | false | 从检查点恢复 |
+| `--force` | false | 覆盖已有数据 |
+| `--no-graphics` | false | 无图形模式 (服务器) |
+| `--num-envs` | 1 | 并行 Unity 环境数 |
+| `--timeout-wait` | 60 | Unity 连接超时 (秒) |
 
-### 7.5 训练监控指标
+```powershell
+# 使用优化版配置
+py -3.10 train.py --run-id soccer-v1 --config poca_soccer_optimized.yaml --force
 
-TensorBoard 关键指标：
+# 恢复训练
+py -3.10 train.py --run-id soccer-v1 --resume
+```
+
+### 7.3 训练配置版本
+
+| 配置文件 | 网络 | 适用场景 |
+|---------|------|---------|
+| `poca_soccer.yaml` | 512×2 | 基础版，一般 GPU |
+| `poca_soccer_optimized.yaml` | 1024×3 | ★ 推荐，更大容量 |
+| `poca_soccer_v100.yaml` | 2048×3 + LSTM | V100 32GB 专用 |
+
+### 7.4 TensorBoard 关键指标
 
 | 指标 | 期望趋势 | 说明 |
 |------|---------|------|
-| `Environment/Cumulative Reward` | 📈 持续上升 | 综合奖励（最重要） |
-| `Self-Play/ELO` | 📈 缓慢上升 | 相对能力评分 |
-| `Losses/Policy Loss` | 📉 稳定下降 | 策略损失 |
-| `Losses/Value Loss` | 📉 稳定下降 | 价值损失 |
-| `Policy/Learning Rate` | ➡ 按 schedule | 学习率衰减 |
-
-Redis 实时查看：
-
-```powershell
-redis-cli LRANGE soccer:metrics:reward 0 5   # 最近 5 条累积奖励
-redis-cli HGETALL soccer:metrics:loss         # 最新训练损失
-redis-cli ZREVRANGE soccer:heatmap:0 0 9 WITHSCORES  # 蓝队热力图 Top 10
-```
-
-### 7.6 训练配置 (YAML 关键参数)
-
-三个版本可用:
-
-```yaml
-# python/config/poca_soccer_v100.yaml (🆕 V100-32GB 专用)
-behaviors:
-  SoccerTwos:
-    trainer_type: poca
-    network_settings:
-      hidden_units: 2048       # 1024→2048  V100 32GB 驾驭
-      num_layers: 3
-      memory:                  # 🆕 LSTM 记忆单元
-        memory_size: 128
-        sequence_length: 16
-    hyperparameters:
-      batch_size: 2048         # 1024→2048  更稳定梯度
-      buffer_size: 20480
-      learning_rate: 0.0001
-      beta: 0.015              # 更强探索正则化
-      num_epoch: 5
-      learning_rate_schedule: linear
-    self_play:
-      window: 30               # 20→30  更大对手池
-      save_steps: 50000
-      swap_steps: 4000
-      play_against_latest_model_ratio: 0.3
-```
-
-```yaml
-# python/config/poca_soccer_optimized.yaml (★ 推荐 — GPU 通用)
-behaviors:
-  SoccerTwos:
-    trainer_type: poca          # ⚠️ POCA 仅支持 extrinsic 奖励信号
-    hyperparameters:
-      learning_rate: 0.0001    # 3e-4→1e-4  更精细更新
-      beta: 0.01               # 0.005→0.01 更多探索
-      epsilon: 0.2             # PPO clip 范围
-      lambd: 0.95              # GAE λ
-      batch_size: 1024         # 2048→1024  更稳定
-      num_epoch: 5             # 3→5        更充分学习
-    network_settings:
-      hidden_units: 1024       # 512→1024   更高容量
-      num_layers: 3            # 2→3        更深网络
-    reward_signals:
-      extrinsic:
-        gamma: 0.99
-    self_play:
-      window: 20               # 10→20      更大对手池
-      swap_steps: 4000         # 2000→4000  更稳定适应
-      play_against_latest_model_ratio: 0.3
-```
-
-| 参数 | 基础值 | 优化值 | 影响 |
-|------|-------|-------|------|
-| `learning_rate` | 0.0003 | **0.0001** | 更精细的策略更新 |
-| `beta` | 0.005 | **0.01** | 更多探索, 防早熟 |
-| `batch_size` | 2048 | **1024** | 更稳定的梯度 |
-| `hidden_units` | 512 | **1024** | 更强的表达能力 |
-| `num_layers` | 2 | **3** | 更深的非线性 |
-| `num_epoch` | 3 | **5** | 每批数据更充分学习 |
-| `self_play.window` | 10 | **20** | 更多样化的对手 |
-| `swap_steps` | 2000 | **4000** | 策略更稳定适应 |
-
-### 7.7 原始方式训练 (不使用 Python 工具包)
-
-```powershell
-cd D:\MyUnity\ml-agents
-
-# 2v2 训练
-mlagents-learn D:\MyUnity\RL-soccer\config\poca\SoccerTwos.yaml --run-id=rl-soccer-twos
-
-# Strikers vs Goalie
-mlagents-learn D:\MyUnity\RL-soccer\config\poca\StrikersVsGoalie.yaml --run-id=rl-soccer-strikers-goalie
-
-# 使用修复版配置
-mlagents-learn D:\MyUnity\RL-soccer\python\config\poca_soccer.yaml --run-id=rl-soccer-v2
-```
-
-> **注意**: 原始方式不会启用 SideChannel 和 RedisStatsWriter。使用 `python train.py` 启动可以获得完整的 Redis 日志功能。
+| `Environment/Cumulative Reward` | 📈 上升 | 综合奖励（最重要） |
+| `Self-Play/ELO` | 📈 上升 | 相对能力评分 |
+| `Losses/Policy Loss` | 📉 下降 | 策略损失 |
+| `Policy/Learning Rate` | ➡ 按 schedule | 学习率 |
 
 ---
 
@@ -710,7 +546,21 @@ redis-cli ZREVRANGE soccer:heatmap:0 0 19 WITHSCORES  # 蓝队热力图 Top 20
 
 ## 附录
 
-### A. 预训练模型
+### A. v2.3 更新日志 (2026-07-14)
+
+| 类型 | 文件 | 修复内容 |
+|------|------|---------|
+| 🐛 Bug | `AgentSoccer.cs` | `m_BallTouch` 默认值 0→1.0，触球奖励不再为零 |
+| 🐛 Bug | `AgentSoccer.cs` | `m_LastDistToBall` 初始化，消除首帧奖励尖峰 |
+| 🐛 Bug | `AgentSoccer.cs` | 拦截/传球检测顺序修复（prevToucher 在覆写前读取） |
+| 🐛 Bug | `AgentSoccer.cs` | `m_SoccerSettings` null 检查，防止 NRE |
+| 🐛 Bug | `SoccerEnvController.cs` | `m_ResetParams` null fallback |
+| 🐛 Bug | `SoccerBallController.cs` | goal tag 空字符串 + envController null 检查 |
+| 🔧 修复 | `train.py` | Windows GBK 编码 emoji 输出修复 |
+| 🔧 修复 | `training_patches.py` | reward_signals str/enum 双版本兼容 |
+| 📄 文档 | `Environment.md` | **新增** 环境配置与训练完整指南 |
+
+### B. 预训练模型
 
 | 模型 | 路径 | 用途 |
 |------|------|------|
@@ -718,46 +568,31 @@ redis-cli ZREVRANGE soccer:heatmap:0 0 19 WITHSCORES  # 蓝队热力图 Top 20
 | Striker.onnx | `Assets/.../TFModels/` | 前锋专用 |
 | Goalie.onnx | `Assets/.../TFModels/` | 门将专用 |
 
-### B. 常见问题
+### C. 常见问题
 
 **Q: 训练时 Unity 报 "Communicator" 错误？**
-A: `mlagents-learn` 必须先启动，再点 Unity ▶ Play。检查端口 5005 未被占用。
+A: 先启动 `train.py`，再点 Unity ▶ Play。检查端口 5005 未被占用。
 
-**Q: Unity 报 NullReferenceException: CollectObservations → sensor.AddObservation？**
-A: `BehaviorParameters` 的 `VectorObservationSize` 设为 0 时，ML-Agents 不会创建
-`VectorSensor`，导致 `CollectObservations` 收到 null sensor。已在 `AgentSoccer.cs` 中添加
-null guard (`if (sensor == null) return`)，设为 0 也不会崩溃。如需启用向量观察，设为 10。
+**Q: `UnicodeEncodeError: 'gbk' codec`？**
+A: Windows 控制台编码问题，v2.3 已修复 (`train.py` 强制 UTF-8)。
 
-**Q: Python 报 "Cannot import mlagents" / 安装失败？**
-A: 检查 Python 版本。Python 3.14 用户必须按 [2.3 节](#23-python-环境-首次安装) 手动修改
-`ml-agents` 的 `setup.py` 版本约束、降级 protobuf 到 3.20.3、移除 onnx。
+**Q: `AttributeError: module 'numpy' has no attribute 'float'`？**
+A: NumPy 2.x 移除了 `np.float`。降级：`py -3.10 -m pip install "numpy>=1.23.5,<1.24.0"`
 
-**Q: Python 报 protobuf 相关错误 (Descriptors/TypeError/ImportError)？**
-A: 版本冲突。ML-Agents 的 protobuf 生成文件只兼容 3.x，但新版 onnx/tensorboard
-需要 protobuf 4.x+。解决: `pip install "protobuf==3.20.3" "tensorboard>=2.13,<2.14"`
-并 `pip uninstall onnx -y`（训练不需要 onnx）。
+**Q: `ModuleNotFoundError: No module named 'onnxscript'`？**
+A: `py -3.10 -m pip install onnxscript`，然后 `py -3.10 -m pip install "protobuf==3.20.3"`
 
-**Q: Redis 里没有步级数据？**
-A: 检查 Unity 场景中是否挂载了 `SoccerStepSideChannel.cs` 脚本（挂到任意 GameObject 即可）。
+**Q: protobuf 相关错误 (Descriptors/TypeError/ImportError)？**
+A: ML-Agents 的 pb2 文件只兼容 protobuf 3.x：`py -3.10 -m pip install "protobuf==3.20.3"`
 
-**Q: Redis 里没有训练指标？**
-A: 确认已按 [2.3 节](#23-python-环境-首次安装) 完成 rlsoccer 包安装
-（`pip install -e .` 后 entry_points 才会注册 RedisStatsWriter 插件）。
+**Q: Python 3.14 能用吗？**
+A: **推荐 Python 3.10**。3.14 需手动改 ml-agents 的 setup.py 版本约束，且 numpy/torch 兼容性差。详见 [Environment.md](Environment.md)。
 
 **Q: 显存不足 (OOM)？**
 A: 减小 `batch_size` 至 1024/512，降低 `buffer_size`。
 
-**Q: 奖励曲线震荡不收敛？**
-A: 增大 `beta` (熵正则化) → 增加探索；降低 `learning_rate` → 更稳定。
+**Q: 不能用 curiosity/gail/rnd？**
+A: POCA 训练器**不支持**，只能使用 `extrinsic` 奖励。
 
-**Q: 不能用 curiosity/gail/rnd 吗？**
-A: POCA 训练器**不支持**。只能使用 `extrinsic` 奖励信号。如需好奇心驱动探索，改用 PPO trainer。
-
-**Q: 优化版配置和基础版有什么区别？**
-A: 优化版降低了 lr、增大了 beta/网络容量/对手池。预期训练效率提升 20-40%。
-
-**Q: 如何启用课程学习？**
-A: `python/config/soccer_curriculum.json` 已配置好 4 阶段课程。训练时 Unity 端自动读取 `ball_movement_speed` 参数调节球速。
-
-**Q: 梯度裁剪和奖励归一化怎么工作的？**
-A: `rlsoccer/training_patches.py` 在训练启动时通过 monkey-patch 注入到 POCA 训练循环中，无需修改 ML-Agents 源码。
+**Q: Unity 报 NullReferenceException？**
+A: 检查 Agent 的 `BehaviorParameters` → `VectorObservationSize` = 10，`BehaviorType` = Default。
