@@ -1,0 +1,65 @@
+# ============================================================
+# RL-Soccer POCA 训练配置 — V100-32GB 优化版
+# ============================================================
+# 适配 GPU: NVIDIA V100 32GB (16,384 CUDA Cores, 900 GB/s HBM2)
+# 相比优化版的改进:
+#   - 2× hidden_units (1024→2048)  充分利用 32GB 显存
+#   - 2× batch_size (1024→2048)    更稳定梯度
+#   - 更大的 buffer_size            更多样本再更新
+#   - 3× window (20→30)            更大 Self-Play 对手池
+#   - 更慢的 lr 衰减                 精确收敛
+#   - 更强的 β 熵正则化              防止早熟
+# ============================================================
+
+behaviors:
+  SoccerTwos:
+    trainer_type: poca
+    hyperparameters:
+      batch_size: 2048             # 1024→2048  大 batch = 更稳定梯度
+      buffer_size: 20480           # 10240→20480 10× batch 缓冲
+      learning_rate: 0.0001        # 保持低 lr，精细更新
+      beta: 0.015                  # 0.01→0.015 更多探索，V100 烧得起
+      epsilon: 0.2                 # PPO clip 范围
+      lambd: 0.95                  # GAE λ
+      num_epoch: 5                 # 每批数据充分学习
+      learning_rate_schedule: linear  # constant→linear 后期降低探索
+
+    network_settings:
+      normalize: false
+      hidden_units: 2048           # 1024→2048  V100 32GB 轻松驾驭
+      num_layers: 3                # 保持 3 层深度
+      vis_encode_type: simple
+      memory:                      # 🆕 添加 LSTM 记忆单元
+        memory_size: 128           # 128 维隐状态
+        sequence_length: 16        # 16 步时间序列
+
+    reward_signals:
+      extrinsic:
+        gamma: 0.99                # 长视距折扣
+        strength: 1.0
+      # 🆕 GAIL 模仿学习辅助信号 (可选，需 demonstrations)
+      # gail:
+      #   gamma: 0.99
+      #   strength: 0.1
+      #   learning_rate: 0.0003
+      #   use_actions: false
+      #   use_vail: false
+      #   demo_path: ""
+
+    keep_checkpoints: 10           # 5→10  更多检查点可回滚
+    max_steps: 50000000            # 50M 总步数
+    time_horizon: 1000
+    summary_freq: 10000            # 每万步输出 TensorBoard
+
+    self_play:
+      save_steps: 50000            # 每 5 万步保存对手快照
+      team_change: 200000          # 每 20 万步交换队伍
+      swap_steps: 4000             # 换对手后适应期
+      window: 30                   # 20→30  更大历史对手池 = 更强泛化
+      play_against_latest_model_ratio: 0.3  # 30% vs 最新模型，70% vs 历史对手
+      initial_elo: 1200.0
+
+environment_parameters:
+  ball_touch: 0.0                  # 初始触球奖励系数
+  goal_reward: 1.0                 # 进球奖励基值
+  ball_movement_speed: 5.0         # 球初始速度

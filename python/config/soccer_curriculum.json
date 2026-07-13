@@ -1,0 +1,49 @@
+{
+  "measure": "reward",
+  "thresholds": [2.0, 6.0, 12.0],
+  "min_lesson_length": 100,
+  "signal_smoothing": true,
+  "parameters": [
+    "ball_touch",
+    "goal_reward",
+    "ball_movement_speed"
+  ],
+  "lessons": [
+    {
+      "name": "入门: 静态球练习",
+      "max_steps": 500000,
+      "config": {
+        "ball_touch": 1.0,
+        "goal_reward": 0.5,
+        "ball_movement_speed": 0.0
+      }
+    },
+    {
+      "name": "初级: 慢速带球",
+      "max_steps": 1000000,
+      "config": {
+        "ball_touch": 0.5,
+        "goal_reward": 0.7,
+        "ball_movement_speed": 2.0
+      }
+    },
+    {
+      "name": "中级: 正常比赛",
+      "max_steps": 50000000,
+      "config": {
+        "ball_touch": 0.0,
+        "goal_reward": 1.0,
+        "ball_movement_speed": 5.0
+      }
+    },
+    {
+      "name": "高级: 快速球",
+      "max_steps": 50000000,
+      "config": {
+        "ball_touch": 0.0,
+        "goal_reward": 1.0,
+        "ball_movement_speed": 8.0
+      }
+    }
+  ]
+}

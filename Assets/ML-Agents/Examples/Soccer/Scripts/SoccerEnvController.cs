@@ -39,6 +39,7 @@ public class SoccerEnvController : MonoBehaviour
     public List<PlayerInfo> AgentsList = new List<PlayerInfo>();
 
     private SoccerSettings m_SoccerSettings;
+    private EnvironmentParameters m_ResetParams;
 
 
     private SimpleMultiAgentGroup m_BlueAgentGroup;
@@ -50,10 +51,18 @@ public class SoccerEnvController : MonoBehaviour
     private TMPro.TextMeshPro m_ScoreTextWest;
     private TMPro.TextMeshPro m_ScoreTextEast;
 
+    /// <summary>
+    /// 最后一次触球的队伍: -1=无人, 0=Blue, 1=Purple。
+    /// Agent 触球时设置，球出界时用于惩罚责任方。
+    /// </summary>
+    [HideInInspector]
+    public int LastBallTouchedByTeam = -1;
+
     void Start()
     {
 
         m_SoccerSettings = FindFirstObjectByType<SoccerSettings>();
+        m_ResetParams = Academy.Instance.EnvironmentParameters;
         // Initialize TeamManager
         m_BlueAgentGroup = new SimpleMultiAgentGroup();
         m_PurpleAgentGroup = new SimpleMultiAgentGroup();
@@ -104,6 +113,45 @@ public class SoccerEnvController : MonoBehaviour
         ballRb.linearVelocity = Vector3.zero;
         ballRb.angularVelocity = Vector3.zero;
 
+        // 🆕 课程学习: 根据 curriculum 参数控制球的初始速度
+        //    如果 m_ResetParams 尚未初始化 (Academy 未就绪)，跳过球速设置
+        var resetParams = m_ResetParams ?? Academy.Instance.EnvironmentParameters;
+        if (resetParams != null)
+        {
+            float ballSpeed = resetParams.GetWithDefault("ball_movement_speed", 5.0f);
+            if (ballSpeed > 0.01f)
+            {
+                Vector3 randomDir = new Vector3(
+                    Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f)).normalized;
+                ballRb.linearVelocity = randomDir * ballSpeed;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 🆕 球出界处理: 惩罚最后触球的队伍，奖励对方队伍。
+    /// 由 SoccerBallController 在球撞墙时调用。
+    /// </summary>
+    public void BallOutOfBounds()
+    {
+        // 只有明确知道谁最后触球才惩罚
+        if (LastBallTouchedByTeam < 0) return;
+
+        if (LastBallTouchedByTeam == (int)Team.Blue)
+        {
+            // 蓝队踢出界 → 蓝队全体受罚，紫队微奖励
+            m_BlueAgentGroup.AddGroupReward(-0.15f);
+            m_PurpleAgentGroup.AddGroupReward(0.05f);
+        }
+        else
+        {
+            // 紫队踢出界 → 紫队全体受罚，蓝队微奖励
+            m_PurpleAgentGroup.AddGroupReward(-0.15f);
+            m_BlueAgentGroup.AddGroupReward(0.05f);
+        }
+
+        // 出界后重置追踪
+        LastBallTouchedByTeam = -1;
     }
 
     public void GoalTouched(Team scoredTeam)
@@ -121,10 +169,36 @@ public class SoccerEnvController : MonoBehaviour
             m_BlueAgentGroup.AddGroupReward(-1);
         }
         UpdateScoreDisplay();
+
+        // 🆕 发送回合摘要到 Python → Redis
+        SendEpisodeSummaryToSideChannel(scoredTeam);
+
         m_PurpleAgentGroup.EndGroupEpisode();
         m_BlueAgentGroup.EndGroupEpisode();
         ResetScene();
 
+    }
+
+    /// <summary>
+    /// 通过 SideChannel 发送回合摘要到 Python 端 Redis
+    /// </summary>
+    private void SendEpisodeSummaryToSideChannel(Team scoredTeam)
+    {
+        var channel = SoccerStepSideChannel.Instance;
+        if (channel == null) return;
+
+        // 找到任意 Agent 获取 episode ID
+        int episodeId = 0;
+        if (AgentsList.Count > 0 && AgentsList[0].Agent != null)
+            episodeId = AgentsList[0].Agent.CompletedEpisodes;
+
+        channel.SendEpisodeSummary(
+            episodeId: episodeId,
+            totalReward: 0f, // 奖励由各 Agent 独立累计
+            steps: m_ResetTimer,
+            goalsScored: scoredTeam == Team.Blue ? 1 : 0,
+            goalsConceded: scoredTeam == Team.Blue ? 0 : 1
+        );
     }
 
     void UpdateScoreDisplay()

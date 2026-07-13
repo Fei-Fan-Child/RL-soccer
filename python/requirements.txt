@@ -1,0 +1,29 @@
+# ============================================================
+# RL-Soccer Python 训练环境依赖
+# ============================================================
+# 安装:
+#   cd python
+#   pip install -e .             # 安装 rlsoccer 包 + 依赖
+#   pip install -r requirements.txt  # 额外工具依赖
+
+# 核心 — 由 setup.py 自动安装
+# mlagents>=1.0.0
+# redis>=4.0.0
+# numpy>=1.21.0
+
+# TensorFlow Serving 转换工具
+tensorflow>=2.13.0
+onnx>=1.14.0
+onnxruntime>=1.15.0
+tf2onnx>=1.15.0
+onnx-tf>=1.10.0
+
+# Redis Bridge (FastAPI)
+fastapi>=0.100.0
+uvicorn>=0.23.0
+pydantic>=2.0.0
+
+# 开发与监控
+tensorboard>=2.13.0
+matplotlib>=3.7.0
+tqdm>=4.65.0

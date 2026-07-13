@@ -1,0 +1,52 @@
+# ============================================================
+# RL-Soccer POCA 训练配置 — 优化版
+# 相比默认配置的改进:
+#   - 更小的 batch_size → 更稳定更新
+#   - 更大的 hidden_units → 更强的表达能力
+#   - 更大的 beta → 更多探索
+#   - 更大的 self_play.window → 更多样对手
+#   - 更大的 num_epoch → 每批数据更充分学习
+#   - 更大的 swap_steps → 更好的策略适应性
+# ============================================================
+
+behaviors:
+  SoccerTwos:
+    trainer_type: poca
+    hyperparameters:
+      batch_size: 1024             # 2048→1024  小 batch = 更稳定, 适合足球短轨迹
+      buffer_size: 10240           # 20480→10240 配合 batch_size
+      learning_rate: 0.0001        # 3e-4→1e-4  更精细的策略更新
+      beta: 0.01                   # 0.005→0.01 增大探索, 防止早熟
+      epsilon: 0.2
+      lambd: 0.95
+      num_epoch: 5                 # 3→5       每批数据多学几轮
+      learning_rate_schedule: constant
+
+    network_settings:
+      normalize: false
+      hidden_units: 1024           # 512→1024  更高容量, 处理336维观察
+      num_layers: 3                # 2→3       加深网络
+      vis_encode_type: simple
+
+    reward_signals:
+      extrinsic:
+        gamma: 0.99
+        strength: 1.0
+
+    keep_checkpoints: 5
+    max_steps: 50000000
+    time_horizon: 1000
+    summary_freq: 10000
+
+    self_play:
+      save_steps: 50000
+      team_change: 200000
+      swap_steps: 4000             # 2000→4000 每次换对手后给更多适应时间
+      window: 20                   # 10→20    更大对手池 = 更多样
+      play_against_latest_model_ratio: 0.3  # 0.5→0.3  更多打历史对手避免遗忘
+      initial_elo: 1200.0
+
+environment_parameters:
+  ball_touch: 0.0
+  goal_reward: 1.0
+  ball_movement_speed: 5.0         # 新增: 球初始速度 (课程学习用)

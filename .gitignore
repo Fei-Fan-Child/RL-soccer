@@ -31,6 +31,19 @@ results/
 summaries/
 models/
 *.onnx.tmp
+*.pt
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+*.egg
+*.eggs
+dist/
+build/
+venv/
+.venv/
+training_logs/
 
 # Project context (not synced)
 CONTEXT.md

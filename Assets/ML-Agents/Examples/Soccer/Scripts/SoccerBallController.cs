@@ -15,17 +15,22 @@ public class SoccerBallController : MonoBehaviour
 
     void OnCollisionEnter(Collision col)
     {
-        if (col.gameObject.CompareTag(purpleGoalTag)) //ball touched purple goal
+        if (!string.IsNullOrEmpty(purpleGoalTag) && col.gameObject.CompareTag(purpleGoalTag))
         {
             envController.GoalTouched(Team.Blue);
         }
-        if (col.gameObject.CompareTag(blueGoalTag)) //ball touched blue goal
+        if (!string.IsNullOrEmpty(blueGoalTag) && col.gameObject.CompareTag(blueGoalTag))
         {
             envController.GoalTouched(Team.Purple);
         }
-        if (col.gameObject.CompareTag("wall")) //ball hit boundary wall
+        if (col.gameObject.CompareTag("wall"))
         {
-            envController.ResetScene();
+            // 🆕 惩罚最后触球的队伍
+            if (envController != null)
+            {
+                envController.BallOutOfBounds();
+                envController.ResetScene();
+            }
         }
     }
 }

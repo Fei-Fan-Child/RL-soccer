@@ -1,0 +1,65 @@
+# ============================================================
+# RL-Soccer TF Serving + Redis 部署配置
+# 一键启动: docker compose -f tf_serving/docker-compose.yml up -d
+# ============================================================
+
+services:
+  # ----- TensorFlow Serving (模型推理服务) -----
+  tf-serving:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rl-soccer-tf-serving
+    ports:
+      - "8500:8500"   # gRPC (Unity 客户端使用)
+      - "8501:8501"   # REST API (调试用)
+    environment:
+      - MODEL_NAME=soccer_twos
+    volumes:
+      - ./models:/models:ro
+    restart: unless-stopped
+    networks:
+      - rl-soccer-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/v1/models/soccer_twos"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ----- Redis (训练日志缓存) -----
+  redis:
+    image: redis:7-alpine
+    container_name: rl-soccer-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ../redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+      - redis-data:/data
+    command: redis-server /usr/local/etc/redis/redis.conf
+    restart: unless-stopped
+    networks:
+      - rl-soccer-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ----- 监控面板 (可选: 简单 Web 服务器) -----
+  # dashboard:
+  #   image: nginx:alpine
+  #   container_name: rl-soccer-dashboard
+  #   ports:
+  #     - "8080:80"
+  #   volumes:
+  #     - ./dashboard:/usr/share/nginx/html:ro
+  #   networks:
+  #     - rl-soccer-net
+
+volumes:
+  redis-data:
+    driver: local
+
+networks:
+  rl-soccer-net:
+    driver: bridge
