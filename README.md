@@ -1,6 +1,5 @@
 # RL-Soccer — 基于强化学习的足球 AI 训练项目
 
-> 石河子大学信息科学与技术学院 · 人工智能综合实训  
 > Unity ML-Agents + POCA + TF Serving + Redis  
 > **v2.3** — 6 项训练 Bug 修复 | Python 3.10 推荐 | 环境配置指南独立为 [Environment.md](Environment.md)
 
@@ -104,6 +103,7 @@ RL-soccer/
 │   │   ├── SoccerSettings.cs               # 全局配置
 │   │   ├── SoccerStepSideChannel.cs        # ★ SideChannel: 步级数据 → Python
 │   │   ├── SoccerSideChannelRegistrar.cs   # ★ 自动注册 SideChannel (挂场景即可)
+│   │   ├── AutoModeSwitcher.cs              # 🆕 自动模式切换 (Human↔AI)
 │   │   └── Billboard.cs                    # UI 始终面向摄像机
 │   ├── Prefabs/                            # 球场 + 球 + Agent 预制体
 │   └── TFModels/                           # 预训练 ONNX 模型
@@ -580,6 +580,7 @@ redis-cli ZREVRANGE soccer:heatmap:0 0 19 WITHSCORES  # 蓝队热力图 Top 20
 | 🆕 新增 | `SoccerEnvController.cs` | `AddTeamReward()` 队伍级奖励方法 |
 | 🔧 修复 | 球门物理 | GoalNet 标签清理 + Soccergoal 碰撞体匹配模型 + Cage 框架 (仅正面进球) |
 | 🔧 修复 | Agent 配置 | BlueStriker `isHumanControlled=true`, P1/P2 键位 |
+| 🆕 新增 | `AutoModeSwitcher.cs` | 自动模式切换: Human ↔ AI 无缝切换 |
 
 #### Python 端
 | 类型 | 文件 | 改动 |
