@@ -154,6 +154,17 @@ public class SoccerEnvController : MonoBehaviour
         LastBallTouchedByTeam = -1;
     }
 
+    /// <summary>
+    /// 🆕 给指定队伍全体奖励 (用于四角反弹等局部事件)。
+    /// </summary>
+    public void AddTeamReward(Team team, float reward)
+    {
+        if (team == Team.Blue)
+            m_BlueAgentGroup.AddGroupReward(reward);
+        else
+            m_PurpleAgentGroup.AddGroupReward(reward);
+    }
+
     public void GoalTouched(Team scoredTeam)
     {
         if (scoredTeam == Team.Blue)

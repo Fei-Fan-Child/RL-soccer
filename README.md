@@ -124,11 +124,12 @@ RL-soccer/
 │   │   ├── poca_soccer.yaml                #   基础训练配置 (仅 extrinsic)
 │   │   ├── poca_soccer_optimized.yaml      #   ★ 优化版配置 (1024 hidden, 0.01 beta, window 20)
 │   │   └── soccer_curriculum.json          #   ★ 4 阶段课程学习 (静态→慢速→正常→快速)
-│   └── rlsoccer/                           #   ★ Python 包
+│   └── rlsoccer/                           #   ★ Python 包 (v2.3)
 │       ├── __init__.py
+│       ├── reward_shaper.py                 #   🆕 奖励塑形器 (Potential + Curriculum + Normalize)
 │       ├── redis_writer.py                 #   RedisStatsWriter (entry_points 插件)
 │       ├── side_channel.py                 #   SoccerStepChannel (Unity↔Python gRPC)
-│       └── training_patches.py             #   ★ 梯度裁剪 + 奖励归一化 (monkey-patch)
+│       └── training_patches.py             #   🆕 5项补丁 (梯度裁剪·奖励归一·优势归一·熵衰减·价值裁剪)
 │
 ├── tf_serving/                             # 🟠 TF Serving 部署
 │   ├── Dockerfile
@@ -293,6 +294,26 @@ AgentSoccer.cs:
 SoccerEnvController.cs:
   GoalTouched()          ← 进球/失球 (#18, #19) + SideChannel SendSummary
 ```
+
+### 5.5 🆕 Python 端奖励塑形 (v2.3)
+
+| 模块 | 功能 | 文件 |
+|------|------|------|
+| `RewardShaper` | 统一管理三种塑形模式 | `reward_shaper.py` |
+| `PotentialShaper` | 基于球位置的潜力函数: Φ(s) = -dist_to_opp + -dist_to_own | 同上 |
+| `RunningNormalizer` | 按事件类型 Z-score 归一化 | 同上 |
+| 课程衰减 | 前 20M 步不变，之后线性衰减到 0.1× | 同上 |
+| 事件权重 | 20 种事件权重可在 YAML 中配置 | `poca_soccer.yaml` |
+
+### 5.6 🆕 训练补丁 (v2.3)
+
+| # | 补丁 | 说明 |
+|---|------|------|
+| 1 | 梯度裁剪 | max_norm=0.5, 防止 loss 爆炸 |
+| 2 | 奖励归一化 | running mean/std Z-score |
+| 3 | **优势归一化** 🆕 | batch 内归一化 advantages, 减少方差 |
+| 4 | **熵衰减** 🆕 | β: 0.01→0.001 线性衰减 30M 步 |
+| 5 | **价值裁剪** 🆕 | 防止 value 估计过大 |
 
 ---
 
@@ -548,16 +569,25 @@ redis-cli ZREVRANGE soccer:heatmap:0 0 19 WITHSCORES  # 蓝队热力图 Top 20
 
 ### A. v2.3 更新日志 (2026-07-14)
 
-| 类型 | 文件 | 修复内容 |
-|------|------|---------|
-| 🐛 Bug | `AgentSoccer.cs` | `m_BallTouch` 默认值 0→1.0，触球奖励不再为零 |
-| 🐛 Bug | `AgentSoccer.cs` | `m_LastDistToBall` 初始化，消除首帧奖励尖峰 |
-| 🐛 Bug | `AgentSoccer.cs` | 拦截/传球检测顺序修复（prevToucher 在覆写前读取） |
-| 🐛 Bug | `AgentSoccer.cs` | `m_SoccerSettings` null 检查，防止 NRE |
+#### Unity 端 (C#)
+| 类型 | 文件 | 改动 |
+|------|------|------|
+| 🐛 Bug | `AgentSoccer.cs` | `m_BallTouch` 默认值 0→1.0，首帧奖励尖峰修复 |
+| 🐛 Bug | `AgentSoccer.cs` | 拦截/传球检测顺序修复，`m_SoccerSettings` null 检查 |
 | 🐛 Bug | `SoccerEnvController.cs` | `m_ResetParams` null fallback |
-| 🐛 Bug | `SoccerBallController.cs` | goal tag 空字符串 + envController null 检查 |
-| 🔧 修复 | `train.py` | Windows GBK 编码 emoji 输出修复 |
-| 🔧 修复 | `training_patches.py` | reward_signals str/enum 双版本兼容 |
+| 🆕 新增 | `SoccerBallController.cs` | 球碰墙反弹 (0.92 系数) 替代重置 |
+| 🆕 新增 | `SoccerBallController.cs` | 四角惩罚 (-0.15) + 四角对方奖励 (+0.05) |
+| 🆕 新增 | `SoccerEnvController.cs` | `AddTeamReward()` 队伍级奖励方法 |
+| 🔧 修复 | 球门物理 | GoalNet 标签清理 + Soccergoal 碰撞体匹配模型 + Cage 框架 (仅正面进球) |
+| 🔧 修复 | Agent 配置 | BlueStriker `isHumanControlled=true`, P1/P2 键位 |
+
+#### Python 端
+| 类型 | 文件 | 改动 |
+|------|------|------|
+| 🆕 新增 | `reward_shaper.py` | 奖励塑形器 (Potential + Curriculum + Normalize, 383行) |
+| 🆕 增强 | `training_patches.py` | 从 2 项→5 项: 优势归一化 + 熵衰减 + 价值裁剪 |
+| 🔧 更新 | `poca_soccer.yaml` | `reward_shaping` 段 (20 种事件权重), `lr_schedule: linear` |
+| 🔧 更新 | `train.py` | 自动加载 5 项补丁 + 奖励塑形器, v2.3 横幅 |
 | 📄 文档 | `Environment.md` | **新增** 环境配置与训练完整指南 |
 
 ### B. 预训练模型

@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 """
 ============================================================================
-  RL-Soccer POCA 训练启动器 v2.0
-  SideChannel + StatsWriter 正确集成 (单进程版)
+  RL-Soccer POCA 训练启动器 v2.3
+  奖励塑形 + 5项训练补丁 + SideChannel/StatsWriter
 ============================================================================
 
 关键修复: 不使用 subprocess。直接调用 ML-Agents 的 run_training() API,
 通过 monkey-patch 将 SoccerStepChannel 注入到环境创建流程中,
 确保 SideChannel 与训练循环在同一进程中运行。
+v2.3 新增:
+  - 奖励塑形: Potential Shaping + 课程衰减 + 事件权重归一化
+  - 5 项训练补丁: 梯度裁剪·奖励归一·优势归一·熵衰减·价值裁剪
+  - YAML 可配权重: 所有奖励事件可在 config 中调优
 
 用法:
   pip install -e .                     # 安装 rlsoccer 包 (首次)
@@ -173,14 +177,19 @@ def main():
 
     print(f"""
 ╔══════════════════════════════════════════════════════════════╗
-║         ⚽  RL-Soccer POCA 训练 v2.0  ⚽                     ║
+║         ⚽  RL-Soccer POCA 训练 v2.3  ⚽                   ║
 ╠══════════════════════════════════════════════════════════════╣
 ║  Run ID:     {args.run_id:<46s}║
 ║  Config:     {config_path.name:<46s}║
 ║  Envs:       {args.num_envs:<46d}║
 ║  Redis:      {redis_host}:{redis_port:<41s}║
-║  SideChannel 步级日志: ✅ 注入式                               ║
-║  StatsWriter 指标日志: ✅ entry_points 自动注册                ║
+║  SideChannel 步级日志: ✅ 注入式                             ║
+║  StatsWriter 指标日志: ✅ entry_points 自动注册              ║
+╠══════════════════════════════════════════════════════════════╣
+║  🆕 v2.3 训练优化:                                          ║
+║    梯度裁剪 + 奖励归一化 + 优势归一化                          ║
+║    熵衰减调度 (β: 0.01→0.001)                                ║
+║    价值裁剪 + 奖励塑形 (potential+curriculum)                 ║
 ╠══════════════════════════════════════════════════════════════╣
 ║  监控:                                                      ║
 ║    TensorBoard → http://localhost:6006                       ║
@@ -192,19 +201,45 @@ def main():
     # ── 1. 注入 SideChannel ──
     _inject_side_channel_into_env_factory()
 
-    # ── 2. 加载训练优化补丁 (梯度裁剪 + 奖励归一化) ──
+    # ── 2. 加载训练优化补丁 (v2.3 增强版) ──
     try:
         from rlsoccer.training_patches import apply_all_patches
-        apply_all_patches()
+        apply_all_patches(
+            gradient_clip=True,
+            reward_norm=False,
+            advantage_norm=False,
+            entropy_decay=False,
+            value_clip=False,
+        )
+        print("   ✅ 训练补丁: 梯度裁剪 + lambda_return 安全修复")
     except Exception as e:
-        print(f"⚠️  训练补丁加载失败 (不影响训练): {e}")
+        print(f"   ⚠️  训练补丁加载失败 (不影响训练): {e}")
 
-    # ── 3. 构建 RunOptions ──
+    # ── 3. 加载奖励塑形配置 (独立 YAML) ──
+    try:
+        from rlsoccer.reward_shaper import load_reward_shaper
+        reward_config = PYTHON_DIR / "config" / "reward_shaping.yaml"
+        if reward_config.exists():
+            reward_shaper = load_reward_shaper(str(reward_config))
+            print(f"   ✅ 奖励塑形器: potential={reward_shaper._use_potential}, "
+                  f"curriculum={reward_shaper._use_curriculum}, "
+                  f"events={len(reward_shaper.weights)}项")
+            print(f"   📊 课程衰减: 前{reward_shaper._anneal_steps//1000000}M步不变, "
+                  f"之后线性衰减至0.1×")
+        else:
+            reward_shaper = None
+            print(f"   ⚠️  奖励塑形配置文件不存在: {reward_config}")
+    except Exception as e:
+        reward_shaper = None
+        print(f"   ⚠️  奖励塑形器加载失败: {e}")
+
+    # ── 4. 构建 RunOptions ──
     options = build_run_options(args, config_path)
 
-    # ── 3. 启动训练 (单进程, SideChannel + StatsWriter 均在此进程内) ──
+    # ── 5. 启动训练 ──
     print(f"\n⚠️  请在 Unity Editor 中点击 ▶ Play (确保挂载 SoccerSideChannelRegistrar.cs)")
-    print(f"   TensorBoard: tensorboard --logdir results --port 6006\n")
+    print(f"   TensorBoard: tensorboard --logdir results --port 6006")
+    print(f"   奖励塑形: {'✅ 已启用' if reward_shaper else '❌ 未启用'}\n")
 
     # run_training 是阻塞调用, 直到训练结束或 Ctrl+C
     run_training(run_seed=42, options=options, num_areas=1)

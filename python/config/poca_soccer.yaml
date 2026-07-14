@@ -1,6 +1,12 @@
 # ============================================================
-# RL-Soccer POCA 训练配置 v2.0
-# 已修复: 移除不支持的 curiosity (POCA 只能使用 extrinsic)
+# RL-Soccer POCA 训练配置 v2.3
+# ============================================================
+# 配合改动:
+#   - 球碰墙反弹 (不重置)
+#   - 四角惩罚
+#   - 球门物理建模 (仅正面进球)
+#   - 奖励塑形器 (potential + normalize + curriculum)
+#   - 训练补丁 (gradient_clip + reward_norm + advantage_norm + entropy_decay + value_clip)
 # ============================================================
 
 behaviors:
@@ -10,7 +16,7 @@ behaviors:
       batch_size: 2048
       buffer_size: 20480
       learning_rate: 0.0003
-      beta: 0.005
+      beta: 0.01                # 0.005→0.01 初始高熵，配合 entropy_decay 衰减
       epsilon: 0.2
       lambd: 0.95
       num_epoch: 3

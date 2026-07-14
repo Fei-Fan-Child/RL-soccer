@@ -145,10 +145,10 @@ class RedisStatsWriter(StatsWriter):
         self._step_count += 1
         timestamp = time.time()
 
-        # 提取关键指标
+        # 提取关键指标 (确保转为 Python 原生 float)
         flat: Dict[str, float] = {}
         for key, summary in values.items():
-            flat[key] = round(summary.mean, 6)
+            flat[key] = float(round(summary.mean, 6))
 
         # ── 按指标类型写入不同 Redis Key ──
 
