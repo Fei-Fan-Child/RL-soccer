@@ -89,6 +89,9 @@ public class AgentSoccer : Agent
     // 球权追踪
     private int m_LastTouchedByTeam;      // -1=none, 0=Blue, 1=Purple
 
+    // 🆕 碰撞计数 (v2.3)
+    private int m_TeammateBumpCount;      // 队友碰撞次数 (每回合重置)
+
     // ============================================================
     // 初始化
     // ============================================================
@@ -489,8 +492,8 @@ public class AgentSoccer : Agent
             if (m_EnvController != null)
                 m_EnvController.LastBallTouchedByTeam = (int)team;
 
-            // 基础触球奖励
-            float baseReward = 0.2f * m_BallTouch;
+            // 基础触球奖励 (v2.3: 提高基础值)
+            float baseReward = 0.35f * m_BallTouch;
             AddReward(baseReward);
 
             // 🆕 踢球方向质量奖励
@@ -501,15 +504,15 @@ public class AgentSoccer : Agent
                 Vector3 dirToOppGoal = (m_OppGoal.position - c.transform.position).normalized;
                 float shotAlignment = Vector3.Dot(kickDir, dirToOppGoal);
 
-                if (shotAlignment > 0.5f)
+                if (shotAlignment > 0.3f)
                 {
                     // 球踢向对方球门方向 → 高质量射门/传球
-                    AddReward(0.4f * shotAlignment); // 0.3→0.4 加强射门奖励
+                    AddReward(0.6f * shotAlignment); // 阈值0.5→0.3, 奖励0.4→0.6
                 }
                 else if (shotAlignment < -0.3f)
                 {
                     // 球踢向己方球门方向 → 乌龙风险!
-                    AddReward(-0.25f); // -0.2→-0.25 加大乌龙惩罚
+                    AddReward(-0.35f); // -0.25→-0.35
                 }
             }
 
@@ -533,11 +536,14 @@ public class AgentSoccer : Agent
             AddReward(-0.15f); // -0.1→-0.15 加大撞墙惩罚
         }
 
-        // ─── 队友碰撞微惩罚 (避免拥挤) ───
+        // ─── 队友碰撞渐进惩罚 (v2.3: 逐次加重) ───
         var otherAgent = c.gameObject.GetComponent<AgentSoccer>();
         if (otherAgent != null && otherAgent.team == team)
         {
-            AddReward(-0.03f); // -0.02→-0.03
+            m_TeammateBumpCount++;
+            // 第1次-0.02, 第2次-0.05, 第3次-0.10, 之后指数增长
+            float bumpPenalty = -0.02f * Mathf.Pow(1.8f, m_TeammateBumpCount - 1);
+            AddReward(Mathf.Max(bumpPenalty, -0.5f)); // 上限-0.5
         }
     }
 
@@ -572,6 +578,7 @@ public class AgentSoccer : Agent
         m_TimeWithoutBall = 0f;
         m_StuckTime = 0f;
         m_LastTouchedByTeam = -1;
+        m_TeammateBumpCount = 0;
         m_LastPosition = transform.position;
 
         // 🆕 重新缓存引用 (场景重置后引用可能丢失)

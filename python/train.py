@@ -74,7 +74,7 @@ def parse_args():
     p.add_argument("--run-id", required=True)
     p.add_argument("--config", default="poca_soccer.yaml")
     p.add_argument("--num-envs", type=int, default=1)
-    p.add_argument("--base-port", type=int, default=5005)
+    p.add_argument("--base-port", type=int, default=5004)
     p.add_argument("--resume", action="store_true")
     p.add_argument("--inference", action="store_true")
     p.add_argument("--force", action="store_true")
